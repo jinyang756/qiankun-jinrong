@@ -35,10 +35,14 @@ const tradeEngine = require('./tradeEngine.js');
 // 导出风险控制模块
 const riskControl = require('./riskControl.js');
 
+// 导出主题编辑器模块
+const ThemeEditor = require('./themeEditor.js');
+
 module.exports = {
   engineConfig,
   calculateFillPrice,
   Decimal,
   tradeEngine,
-  riskControl
+  riskControl,
+  ThemeEditor
 };

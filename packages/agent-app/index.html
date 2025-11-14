@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>代理人端</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; object-src 'none';">
+    <title>代理人端 - 金融模拟交易系统</title>
+    <style>
+        /* ... existing styles ... */
+    </style>
 </head>
 <body>
-    <div id="agent-app">
-        <h1>代理人端应用</h1>
-        <div id="agent-root"></div>
-    </div>
+    <div id="agent-root"></div>
+    
+    <!-- 子应用脚本 -->
+    <script src="./src/main.js" integrity="sha384-{{agentAppJsIntegrity}}"></script>
 </body>
 </html>

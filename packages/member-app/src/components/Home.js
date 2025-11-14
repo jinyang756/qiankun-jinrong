@@ -20,6 +20,10 @@ export default function Home() {
       <div class="quick-actions">
         <button id="trade-btn">交易</button>
         <button id="portfolio-btn">持仓</button>
+        <button id="order-history-btn">订单历史</button>
+        <button id="message-center-btn">消息中心</button>
+        <button id="risk-disclosure-btn">风险说明</button>
+        <button id="online-service-btn">在线客服</button>
       </div>
     </div>
   `;

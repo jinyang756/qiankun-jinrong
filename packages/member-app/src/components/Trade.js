@@ -8,6 +8,10 @@ export default function Trade() {
           <input type="text" id="stock-code" name="stock-code" placeholder="请输入股票代码">
         </div>
         <div class="form-group">
+          <label for="stock-name">股票名称:</label>
+          <span id="stock-name-display">--</span>
+        </div>
+        <div class="form-group">
           <label for="trade-type">交易类型:</label>
           <select id="trade-type" name="trade-type">
             <option value="buy">买入</option>
@@ -22,14 +26,37 @@ export default function Trade() {
           <label for="price">价格:</label>
           <input type="number" id="price" name="price" step="0.01" placeholder="请输入价格">
         </div>
+        <div class="form-group">
+          <label for="current-price">当前价格:</label>
+          <span id="current-price">--</span>
+        </div>
+        <div class="form-group">
+          <label for="trade-fee">交易费用:</label>
+          <span id="trade-fee">--</span>
+        </div>
+        <div class="form-group">
+          <label for="estimated-amount">预计成交金额:</label>
+          <span id="estimated-amount">--</span>
+        </div>
         <button id="submit-trade">提交交易</button>
+        <button id="reset-trade">重置</button>
       </div>
-      <div class="trade-info">
-        <h3>交易信息</h3>
-        <p>股票名称: <span id="stock-name">--</span></p>
-        <p>当前价格: <span id="current-price">--</span></p>
-        <p>交易费用: <span id="trade-fee">--</span></p>
-        <p>预计成交金额: <span id="estimated-amount">--</span></p>
+      <div class="trade-history">
+        <h3>最近交易</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>股票代码</th>
+              <th>交易类型</th>
+              <th>数量</th>
+              <th>价格</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="trade-history-body">
+            <!-- 交易历史将通过JavaScript动态填充 -->
+          </tbody>
+        </table>
       </div>
     </div>
   `;

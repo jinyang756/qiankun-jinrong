@@ -24,8 +24,24 @@ const riskConfig = {
   enableBlacklist: true,           // 启用黑名单
   enableSTCheck: true,             // 启用ST股票检查
   enableLimitUpCheck: true,        // 启用涨跌停检查
-  maxDailyLoss: 10000              // 单日最大亏损
+  maxDailyLoss: 10000,             // 单日最大亏损
+  
+  // 新增风控设置
+  positionLimits: {
+    maxSharesPerSymbol: 10000,     // 单只股票最大持仓数量
+    maxPositions: 50               // 最大持仓股票数
+  },
+  
+  // 熔断机制
+  circuitBreaker: {
+    enabled: true,                 // 启用熔断机制
+    lossThreshold: 5000,           // 亏损阈值
+    freezeDuration: 300            // 冻结时长(秒)
+  }
 };
+
+// 用户风控状态
+const userRiskStatus = new Map();
 
 // 检查订单风险
 exports.checkOrderRisk = (order, userProfile) => {
@@ -47,6 +63,19 @@ exports.checkOrderRisk = (order, userProfile) => {
     errors.push('禁止交易ST股票');
   }
   
+  // 检查用户是否被熔断冻结
+  const userId = userProfile.id;
+  const riskStatus = userRiskStatus.get(userId);
+  if (riskStatus && riskStatus.frozenUntil) {
+    const now = Date.now();
+    if (now < riskStatus.frozenUntil) {
+      errors.push('用户交易已被熔断冻结');
+    } else {
+      // 冻结时间已过，清除冻结状态
+      userRiskStatus.delete(userId);
+    }
+  }
+  
   return {
     passed: errors.length === 0,
     errors
@@ -54,12 +83,24 @@ exports.checkOrderRisk = (order, userProfile) => {
 };
 
 // 检查持仓风险
-exports.checkPositionRisk = (positionValue, userProfile, agentProfile) => {
+exports.checkPositionRisk = (positionValue, userProfile, agentProfile, positions = []) => {
   const errors = [];
   
   // 检查用户持仓市值
   if (positionValue > riskConfig.userLimits.maxPositionValue) {
     errors.push('用户持仓市值超过限制');
+  }
+  
+  // 检查单只股票持仓数量
+  positions.forEach(position => {
+    if (position.quantity > riskConfig.positionLimits.maxSharesPerSymbol) {
+      errors.push(`股票${position.symbol}持仓数量超过限制`);
+    }
+  });
+  
+  // 检查持仓股票数
+  if (positions.length > riskConfig.positionLimits.maxPositions) {
+    errors.push('持仓股票数超过限制');
   }
   
   // 检查代理人总持仓市值
@@ -86,6 +127,47 @@ exports.checkGlobalRisk = (totalPositionValue) => {
     passed: errors.length === 0,
     errors
   };
+};
+
+// 更新用户亏损状态
+exports.updateUserLoss = (userId, loss) => {
+  if (!riskConfig.circuitBreaker.enabled) {
+    return { triggered: false };
+  }
+  
+  // 获取用户当前风险状态
+  let riskStatus = userRiskStatus.get(userId) || { 
+    totalLoss: 0, 
+    frozenUntil: null 
+  };
+  
+  // 累计亏损
+  riskStatus.totalLoss += loss;
+  
+  // 检查是否触发熔断
+  let triggered = false;
+  if (riskStatus.totalLoss >= riskConfig.circuitBreaker.lossThreshold) {
+    // 触发熔断
+    const freezeDuration = riskConfig.circuitBreaker.freezeDuration * 1000; // 转换为毫秒
+    riskStatus.frozenUntil = Date.now() + freezeDuration;
+    triggered = true;
+    
+    console.log(`用户${userId}触发熔断机制，冻结时长${riskConfig.circuitBreaker.freezeDuration}秒`);
+  }
+  
+  // 更新用户风险状态
+  userRiskStatus.set(userId, riskStatus);
+  
+  return { 
+    triggered,
+    totalLoss: riskStatus.totalLoss,
+    frozenUntil: riskStatus.frozenUntil
+  };
+};
+
+// 获取用户风险状态
+exports.getUserRiskStatus = (userId) => {
+  return userRiskStatus.get(userId) || { totalLoss: 0, frozenUntil: null };
 };
 
 // 获取风险配置

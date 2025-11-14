@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理端</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; object-src 'none';">
+    <title>管理端 - 金融模拟交易系统</title>
+    <style>
+        /* ... existing styles ... */
+    </style>
 </head>
 <body>
-    <div id="admin-app">
-        <h1>管理端应用</h1>
-        <div id="admin-root"></div>
-    </div>
+    <div id="admin-root"></div>
+    
+    <!-- 子应用脚本 -->
+    <script src="./src/main.js" integrity="sha384-{{adminConsoleJsIntegrity}}"></script>
 </body>
 </html>

@@ -3,14 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>交易系统</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; object-src 'none';">
+    <title>金融模拟交易系统</title>
+    <style>
+        /* ... existing styles ... */
+    </style>
 </head>
 <body>
     <div id="app-shell">
-        <h1>交易系统主应用</h1>
-        <div id="app-member"></div>
-        <div id="app-agent"></div>
-        <div id="app-admin"></div>
+        <header>
+            <h1>金融模拟交易系统</h1>
+            <nav>
+                <button id="member-link">会员端</button>
+                <button id="agent-link">代理人端</button>
+                <button id="admin-link">管理端</button>
+            </nav>
+        </header>
+        <main id="main-content">
+            <div id="app-container"></div>
+        </main>
     </div>
+
+    <!-- qiankun 主应用脚本 -->
+    <script src="./src/main.js" integrity="sha384-{{appShellJsIntegrity}}"></script>
 </body>
 </html>

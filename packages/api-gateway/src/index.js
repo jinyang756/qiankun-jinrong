@@ -15,6 +15,38 @@ app.use(cors());    // 跨域支持
 app.use(morgan('combined'));  // 日志记录
 app.use(express.json());  // JSON解析
 
+// 引入CSP中间件
+const cspMiddleware = require('./middleware/csp');
+
+// 应用CSP中间件
+app.use(cspMiddleware);
+
+// 引入安全中间件
+const security = require('./middleware/security');
+
+// 添加IP白名单中间件（应用于所有路由）
+app.use(security.ipWhitelistMiddleware);
+
+// 添加2FA中间件（应用于需要保护的路由）
+// 这里我们将其应用于所有路由，但在实际应用中可能只想应用于敏感操作
+app.use(security.twoFactorMiddleware);
+
+// 引入监控中间件
+const monitoring = require('./middleware/monitoring');
+
+// 添加监控中间件
+app.use(monitoring.httpMetricsMiddleware);
+
+// 添加获取指标的路由
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', monitoring.getContentType());
+    res.end(await monitoring.getMetrics());
+  } catch (error) {
+    res.status(500).send('Error generating metrics');
+  }
+});
+
 // 基础路由
 app.get('/', (req, res) => {
   res.json({ message: 'API Gateway is running' });
@@ -84,6 +116,9 @@ app.get('/news/latest', newsController.getLatestNews);
 
 app.post('/admin/news/config', newsController.configureNewsSource);
 
+// 添加获取资讯配置的路由
+app.get('/api/news/config', newsController.getNewsConfig);
+
 // 导入Redis和审批队列
 const redisClient = require('./config/redis');
 const { approvalQueue } = require('./queues/approvalQueue');
@@ -91,12 +126,35 @@ const { approvalQueue } = require('./queues/approvalQueue');
 // 导入审计控制器
 const auditController = require('./controllers/auditController');
 
+// 引入安全控制器
+const securityController = require('./controllers/securityController');
+
+// 引入主题控制器
+const themeController = require('./controllers/themeController');
+
 // 连接Redis
 redisClient.connect();
 
 // 添加审计日志路由
 app.get('/admin/audit/logs', auditController.getAuditLogs);
 app.get('/admin/audit/export', auditController.exportAuditLogs);
+
+// 安全相关路由
+app.post('/api/security/2fa/enable', securityController.enableTwoFactor);
+app.post('/api/security/2fa/disable', securityController.disableTwoFactor);
+app.get('/api/security/2fa/status', securityController.getTwoFactorStatus);
+app.post('/api/security/ip-whitelist/add', securityController.addIPToWhitelist);
+app.post('/api/security/ip-whitelist/remove', securityController.removeIPFromWhitelist);
+app.get('/api/security/ip-whitelist', securityController.getIPWhitelist);
+
+// 主题相关路由
+app.get('/api/theme/:tenantId', themeController.getTheme);
+app.post('/api/theme/:tenantId', themeController.updateTenantTheme);
+app.post('/api/theme/:tenantId/color', themeController.updateThemeColor);
+app.post('/api/theme/:tenantId/preview', themeController.previewTheme);
+app.post('/api/theme/:tenantId/save', themeController.saveTheme);
+app.post('/api/theme', themeController.createTenantTheme);
+app.get('/api/themes', themeController.getAllThemes);
 
 // 启动服务
 app.listen(PORT, () => {
