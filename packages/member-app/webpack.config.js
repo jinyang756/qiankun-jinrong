@@ -17,9 +17,27 @@ module.exports = {
       'Access-Control-Allow-Origin': '*'
     }
   },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
+      }
+    ]
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: './index.html'
     })
-  ]
+  ],
+  externals: {
+    react: 'React',
+    'react-dom': 'ReactDOM'
+  }
 };
