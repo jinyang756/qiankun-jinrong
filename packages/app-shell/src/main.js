@@ -40,7 +40,8 @@ registerMicroApps([
 // 启动qiankun
 start({
   sandbox: {
-    strictStyleIsolation: true
+    strictStyleIsolation: true,
+    experimentalStyleIsolation: true
   },
   prefetch: 'all'
 });

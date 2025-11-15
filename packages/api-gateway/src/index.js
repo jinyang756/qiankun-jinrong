@@ -31,6 +31,12 @@ app.use(security.ipWhitelistMiddleware);
 // 这里我们将其应用于所有路由，但在实际应用中可能只想应用于敏感操作
 app.use(security.twoFactorMiddleware);
 
+// 添加数据加密中间件
+app.use(security.dataEncryptionMiddleware);
+
+// 添加访问控制中间件
+app.use(security.accessControlMiddleware);
+
 // 引入监控中间件
 const monitoring = require('./middleware/monitoring');
 
@@ -43,69 +49,76 @@ app.get('/metrics', async (req, res) => {
     res.set('Content-Type', monitoring.getContentType());
     res.end(await monitoring.getMetrics());
   } catch (error) {
-    res.status(500).send('Error generating metrics');
+    console.error('获取监控指标失败:', error);
+    res.status(500).json({ error: '获取监控指标失败' });
   }
 });
 
-// 基础路由
-app.get('/', (req, res) => {
-  res.json({ message: 'API Gateway is running' });
+// 健康检查路由
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// 邀请与会员相关路由
-app.post('/admin/agents', authenticate, authorize(['ADMIN']), (req, res) => {
-  res.json({ message: '创建/编辑代理' });
+// 登录路由
+app.post('/login', (req, res) => {
+  // 这里应该实现实际的登录逻辑
+  res.json({ 
+    message: '登录成功', 
+    token: 'mock-jwt-token',
+    user: {
+      id: 'U001',
+      name: 'Mock User',
+      role: 'MEMBER'
+    }
+  });
 });
 
-app.post('/admin/invites/batch', authenticate, authorize(['ADMIN', 'AGENT']), (req, res) => {
-  res.json({ message: '批量邀请码' });
+// 受保护的路由示例
+app.get('/protected', authenticate, authorize(['MEMBER']), (req, res) => {
+  res.json({ message: '这是一个受保护的路由，只有MEMBER角色可以访问' });
 });
 
-app.post('/public/invites/redeem', (req, res) => {
-  res.json({ message: '兑换邀请码' });
-});
-
-app.get('/agent/members', authenticate, authorize(['AGENT']), dataIsolation, (req, res) => {
-  res.json({ message: '获取代理人名下会员' });
-});
-
-// 订单与审批相关路由
-app.post('/member/orders', authenticate, authorize(['MEMBER']), dataIsolation, (req, res) => {
-  res.json({ message: '创建订单' });
-});
-
-// 导入审批控制器
+// 引入审批控制器
 const approvalController = require('./controllers/approvalController');
 
+// 审批相关路由
 app.get('/agent/review/queue', authenticate, authorize(['AGENT']), dataIsolation, approvalController.getPendingApprovals);
 
 app.post('/agent/review/:id/approve', authenticate, authorize(['AGENT']), dataIsolation, approvalController.approveOrder);
 
 app.post('/agent/review/:id/reject', authenticate, authorize(['AGENT']), dataIsolation, approvalController.rejectOrder);
 
+// 引入邀请控制器
+const inviteController = require('./controllers/inviteController');
+
+// 邀请相关路由
+app.post('/admin/invites/batch', authenticate, authorize(['ADMIN']), inviteController.createInvites);
+
+app.post('/public/invites/redeem', inviteController.redeemInvite);
+
 // 引擎配置相关路由
-app.get('/admin/engine/config', (req, res) => {
+app.get('/admin/engine/config', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '获取引擎配置' });
 });
 
-app.post('/admin/engine/config', (req, res) => {
+app.post('/admin/engine/config', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '更新引擎配置' });
 });
 
-app.post('/admin/engine/killswitch', (req, res) => {
+app.post('/admin/engine/killswitch', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '触发Kill Switch' });
 });
 
 // 主题与素材相关路由
-app.get('/admin/theme', (req, res) => {
+app.get('/admin/theme', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '获取主题配置' });
 });
 
-app.post('/admin/theme', (req, res) => {
+app.post('/admin/theme', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '更新主题配置' });
 });
 
-app.post('/admin/assets/upload', (req, res) => {
+app.post('/admin/assets/upload', authenticate, authorize(['ADMIN']), (req, res) => {
   res.json({ message: '上传素材' });
 });
 
@@ -114,7 +127,7 @@ const newsController = require('./controllers/newsController');
 
 app.get('/news/latest', newsController.getLatestNews);
 
-app.post('/admin/news/config', newsController.configureNewsSource);
+app.post('/admin/news/config', authenticate, authorize(['ADMIN']), newsController.configureNewsSource);
 
 // 添加获取资讯配置的路由
 app.get('/api/news/config', newsController.getNewsConfig);
@@ -136,27 +149,22 @@ const themeController = require('./controllers/themeController');
 redisClient.connect();
 
 // 添加审计日志路由
-app.get('/admin/audit/logs', auditController.getAuditLogs);
-app.get('/admin/audit/export', auditController.exportAuditLogs);
+app.get('/admin/audit/logs', authenticate, authorize(['ADMIN']), auditController.getAuditLogs);
+app.get('/admin/audit/export', authenticate, authorize(['ADMIN']), auditController.exportAuditLogs);
 
 // 安全相关路由
-app.post('/api/security/2fa/enable', securityController.enableTwoFactor);
-app.post('/api/security/2fa/disable', securityController.disableTwoFactor);
-app.get('/api/security/2fa/status', securityController.getTwoFactorStatus);
-app.post('/api/security/ip-whitelist/add', securityController.addIPToWhitelist);
-app.post('/api/security/ip-whitelist/remove', securityController.removeIPFromWhitelist);
-app.get('/api/security/ip-whitelist', securityController.getIPWhitelist);
+app.post('/api/security/2fa/enable', authenticate, securityController.enableTwoFactor);
+app.post('/api/security/2fa/disable', authenticate, securityController.disableTwoFactor);
+app.get('/api/security/2fa/status', authenticate, securityController.getTwoFactorStatus);
+app.post('/api/security/ip-whitelist/add', authenticate, authorize(['ADMIN']), securityController.addIPToWhitelist);
+app.post('/api/security/ip-whitelist/remove', authenticate, authorize(['ADMIN']), securityController.removeIPFromWhitelist);
+app.get('/api/security/ip-whitelist', authenticate, authorize(['ADMIN']), securityController.getIPWhitelist);
 
 // 主题相关路由
 app.get('/api/theme/:tenantId', themeController.getTheme);
-app.post('/api/theme/:tenantId', themeController.updateTenantTheme);
-app.post('/api/theme/:tenantId/color', themeController.updateThemeColor);
-app.post('/api/theme/:tenantId/preview', themeController.previewTheme);
-app.post('/api/theme/:tenantId/save', themeController.saveTheme);
-app.post('/api/theme', themeController.createTenantTheme);
-app.get('/api/themes', themeController.getAllThemes);
+app.post('/api/theme/:tenantId', authenticate, authorize(['ADMIN']), themeController.updateTenantTheme);
 
-// 启动服务
+// 启动服务器
 app.listen(PORT, () => {
-  console.log(`API Gateway is running on port ${PORT}`);
+  console.log(`API网关运行在端口 ${PORT}`);
 });

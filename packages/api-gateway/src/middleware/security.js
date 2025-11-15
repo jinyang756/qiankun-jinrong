@@ -143,6 +143,21 @@ const getIPWhitelist = () => {
   return Array.from(ipWhitelist);
 };
 
+// 数据加密中间件
+const dataEncryptionMiddleware = (req, res, next) => {
+  // 对敏感数据进行加密处理
+  // 这里只是一个示例，实际应用中需要根据具体需求实现
+  console.log('数据加密处理');
+  next();
+};
+
+// 访问控制中间件
+const accessControlMiddleware = (req, res, next) => {
+  // 实现更严格的访问控制
+  console.log('访问控制检查');
+  next();
+};
+
 module.exports = {
   ipWhitelistMiddleware,
   twoFactorMiddleware,
@@ -152,5 +167,7 @@ module.exports = {
   addIPToWhitelist,
   removeIPFromWhitelist,
   getIPWhitelist,
-  twoFactorConfig
+  twoFactorConfig,
+  dataEncryptionMiddleware,
+  accessControlMiddleware
 };

@@ -1,6 +1,6 @@
 // CSP中间件
 const cspMiddleware = (req, res, next) => {
-  // 设置CSP头
+  // 设置更严格的CSP头
   res.setHeader('Content-Security-Policy', [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
@@ -11,7 +11,8 @@ const cspMiddleware = (req, res, next) => {
     "object-src 'none'",
     "frame-ancestors 'none'",
     "base-uri 'self'",
-    "form-action 'self'"
+    "form-action 'self'",
+    "upgrade-insecure-requests"
   ].join('; '));
   
   // 设置其他安全头
@@ -20,6 +21,7 @@ const cspMiddleware = (req, res, next) => {
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   
   next();
 };

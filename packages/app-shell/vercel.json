@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/member(.*)",
+      "dest": "/member-app/index.html"
+    },
+    {
+      "src": "/agent(.*)",
+      "dest": "/agent-app/index.html"
+    },
+    {
+      "src": "/admin(.*)",
+      "dest": "/admin-console/index.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app-shell/index.html"
+    }
+  ]
+}
